@@ -48,7 +48,7 @@ size_t bytes_required_for(const struct password_base* last_base) {
 	float bytes = 0.0f;
 
 	while (last_base != NULL) {
-		bytes += log2(last_base->option_count) / 8.0f;
+		bytes += log2f(last_base->option_count) / 8.0f;
 		last_base = last_base->next;
 	}
 
