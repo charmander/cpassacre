@@ -12,9 +12,6 @@ KeccakSponge.o: keccak/KeccakSponge.c
 KeccakF-1600-opt64.o: keccak/KeccakF-1600-opt64.c
 	$(CC) $(CFLAGS) -c $<
 
-cykeccak:
-	git submodule init --update
-
 clean:
 	rm -f KeccakSponge.o KeccakF-1600-opt64.o cpassacre
 
