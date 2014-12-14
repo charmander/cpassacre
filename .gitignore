@@ -1,3 +1,4 @@
 /KeccakF-1600-opt*.o
 /KeccakSponge.o
 /cpassacre
+/config.h
