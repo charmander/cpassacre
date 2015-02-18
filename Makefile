@@ -4,7 +4,7 @@ CC := clang
 CFLAGS += -std=c11 -Wall -Wextra -Werror -pedantic -O3 -march=native
 
 cpassacre: cpassacre-gmp.c KeccakSponge.o KeccakF-1600-opt64.o config.h
-	$(CC) $(CFLAGS) KeccakSponge.o KeccakF-1600-opt64.o $< -lm -lgmp -o $@
+	$(CC) $(CFLAGS) KeccakSponge.o KeccakF-1600-opt64.o cpassacre-gmp.c -lm -lgmp -o $@
 
 KeccakSponge.o: keccak/KeccakSponge.c
 	$(CC) $(CFLAGS) -c $<
@@ -23,4 +23,4 @@ install: cpassacre
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/cpassacre
 
-.PHONY: all clean install uninstall
+.PHONY: clean install uninstall
