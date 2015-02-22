@@ -1,7 +1,7 @@
 PREFIX := /usr/local
 
 CC := clang
-CFLAGS += -std=c11 -Wall -Wextra -Werror -pedantic -O3 -march=native
+CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -O3 -march=native
 
 cpassacre: cpassacre-gmp.c KeccakSponge.o KeccakF-1600-opt64.o config.h
 	$(CC) $(CFLAGS) KeccakSponge.o KeccakF-1600-opt64.o cpassacre-gmp.c -lm -lgmp -o $@
