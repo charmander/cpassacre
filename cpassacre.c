@@ -92,36 +92,8 @@ unsigned char* upper_bound_for(const struct password_base* last_base, size_t byt
 	return result;
 }
 
-int mod_pow(int b, int e, int m) {
-	int result = 1;
-
-	b %= m;
-
-	while (e > 0) {
-		if (e & 1) {
-			result = result * b % m;
-		}
-
-		e >>= 1;
-		b = b * b % m;
-	}
-
-	return result;
-}
-
-char final_character(const struct password_base* last_base, const unsigned char* bytes, size_t byte_count) {
-	size_t option_count = last_base->option_count;
-	int base = 256 % option_count;
-	int sum = 0;
-
-	for (size_t i = 0; i < byte_count; i++) {
-		sum += mod_pow(base, i, option_count) * (bytes[byte_count - 1 - i] % option_count);
-	}
-
-	return last_base->options[sum % option_count];
-}
-
-void long_divide(unsigned char* bytes, int divisor, size_t byte_count) {
+// Divide bytes (stored big-endian) by divisor and return the remainder.
+int long_divide(unsigned char* bytes, int divisor, size_t byte_count) {
 	int carry = 0;
 
 	for (size_t i = 0; i < byte_count; i++) {
@@ -130,6 +102,8 @@ void long_divide(unsigned char* bytes, int divisor, size_t byte_count) {
 		bytes[i] = b / divisor;
 		carry = b % divisor;
 	}
+
+	return carry;
 }
 
 int main(int argc, char* argv[]) {
@@ -232,17 +206,15 @@ int main(int argc, char* argv[]) {
 	struct password_character* result_next;
 
 	while (last_base != NULL) {
-		char c = final_character(last_base, input, output_bytes_required);
-		long_divide(input, last_base->option_count, output_bytes_required);
+		int c = long_divide(input, last_base->option_count, output_bytes_required);
 
 		result_next = malloc(sizeof(struct password_character));
-
 		if (result_next == NULL) {
 			fputs("Failed to allocate memory.\n", stderr);
 			return 1;
 		}
 
-		result_next->value = c;
+		result_next->value = last_base->options[c];
 		result_next->next = result_head;
 		result_head = result_next;
 
