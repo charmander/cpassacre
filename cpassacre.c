@@ -147,11 +147,20 @@ int main(int argc, char* argv[]) {
 
 	unsigned char input[1024];
 
-	fgets((char*)input, sizeof input, stdin);
+	int read_failed = (fgets((char*)input, sizeof input, stdin) == NULL);
 
 	if (termattr_result == 0) {
 		putc('\n', stderr);
 		tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+	}
+
+	if (read_failed) {
+		if (!feof(stdin)) {
+			fputs("Failed to read password.\n", stderr);
+			return 1;
+		}
+
+		input[0] = '\0';
 	}
 
 	size_t input_length = strlen((char*)input);
