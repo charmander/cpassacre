@@ -49,6 +49,28 @@ int password_scheme_add(struct password_scheme* scheme, size_t count, const char
 	return 0;
 }
 
+char* password_read(char* s, size_t size) {
+	struct termios original_termios, modified_termios;
+	int termattr_result = tcgetattr(STDIN_FILENO, &original_termios);
+
+	if (termattr_result == 0) {
+		modified_termios = original_termios;
+		modified_termios.c_lflag &= ~ECHO;
+		termattr_result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified_termios);
+	}
+
+	fputs("Password: ", stderr);
+
+	char* result = fgets(s, size, stdin);
+
+	if (termattr_result == 0) {
+		putc('\n', stderr);
+		tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+	}
+
+	return result;
+}
+
 #include "config.h"
 
 size_t bytes_required_for(const struct password_base* last_base) {
@@ -134,25 +156,9 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	struct termios original_termios, modified_termios;
-	int termattr_result = tcgetattr(STDIN_FILENO, &original_termios);
-
-	if (termattr_result == 0) {
-		modified_termios = original_termios;
-		modified_termios.c_lflag &= ~ECHO;
-		termattr_result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified_termios);
-	}
-
-	fputs("Password: ", stderr);
-
 	unsigned char input[1024];
 
-	int read_failed = (fgets((char*)input, sizeof input, stdin) == NULL);
-
-	if (termattr_result == 0) {
-		putc('\n', stderr);
-		tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
-	}
+	int read_failed = (password_read((char*)input, sizeof input) == NULL);
 
 	if (read_failed) {
 		if (!feof(stdin)) {
