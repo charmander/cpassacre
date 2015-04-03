@@ -15,11 +15,11 @@ Configuration is done through `config.h`. Modify it and recompile.
 
  - [Words in schemata][1] are not supported.
 
- - Usernames are not supported.
-   Prefix your password with a username and a colon for compatibility.
+ - Usernames are not supported; use `<identifier>:<username>` as an
+   identifier for compatibility.
 
- - Site identifiers are not converted to Punycode automatically.
-   Do this manually for compatibility.
+ - Site identifiers are not converted to Punycode automatically;
+   do this manually for compatibility.
 
  - Password confirmation is not supported.
 
