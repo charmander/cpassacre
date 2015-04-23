@@ -16,11 +16,7 @@ struct password_scheme {
 	int error;
 	unsigned int iterations;
 	struct password_base* last_base;
-};
-
-struct password_character {
-	char value;
-	struct password_character* next;
+	size_t length;
 };
 
 int password_scheme_add(struct password_scheme* scheme, size_t count, const char* character_set) {
@@ -45,6 +41,8 @@ int password_scheme_add(struct password_scheme* scheme, size_t count, const char
 
 		scheme->last_base = new_base;
 	}
+
+	scheme->length += count;
 
 	return 0;
 }
@@ -95,10 +93,10 @@ unsigned char* upper_bound_for(const struct password_base* last_base, size_t byt
 	result[bytes_required - 1] = 1;
 
 	while (last_base != NULL) {
-		int carry = 0;
+		unsigned int carry = 0;
 
 		for (ssize_t i = bytes_required - 1; i >= 0; i--) {
-			int r = result[i] * last_base->option_count + carry;
+			unsigned int r = result[i] * last_base->option_count + carry;
 			result[i] = r % 256;
 			carry = r / 256;
 		}
@@ -213,38 +211,27 @@ int main(int argc, char* argv[]) {
 
 	free(upper_bound);
 
-	struct password_character result_tail = {
-		.next = NULL
-	};
+	char* const result = malloc(scheme.length + 1);
 
-	struct password_character* result_head = &result_tail;
-	struct password_character* result_next;
+	if (result == NULL) {
+		fputs("Failed to allocate memory.\n", stderr);
+		return 1;
+	}
+
+	char* current = result + scheme.length;
+	*current = '\0';
 
 	while (last_base != NULL) {
 		int c = long_divide(input, last_base->option_count, output_bytes_required);
+		*--current = last_base->options[c];
 
-		result_next = malloc(sizeof(struct password_character));
-		if (result_next == NULL) {
-			fputs("Failed to allocate memory.\n", stderr);
-			return 1;
-		}
-
-		result_next->value = last_base->options[c];
-		result_next->next = result_head;
-		result_head = result_next;
-
-		struct password_base* next = last_base->next;
+		struct password_base* const next = last_base->next;
 		free(last_base);
 		last_base = next;
 	}
 
-	while ((result_next = result_head->next)) {
-		putchar(result_head->value);
-		free(result_head);
-		result_head = result_next;
-	}
+	puts(result);
 
-	putchar('\n');
-
+	free(result);
 	return 0;
 }
