@@ -52,9 +52,9 @@ int InitSponge(spongeState *state, unsigned int rate, unsigned int capacity);
   * Function to give input data for the sponge function to absorb.
   * @param  state       Pointer to the state of the sponge function initialized by InitSponge().
   * @param  data        Pointer to the input data. 
-  *                     When @a databitLen is not a multiple of 8, the last bits of data must be
+  *                     When @a databitlen is not a multiple of 8, the last bits of data must be
   *                     in the least significant bits of the last byte.
-  * @param  databitLen  The number of input bits provided in the input data.
+  * @param  databitlen  The number of input bits provided in the input data.
   * @pre    In the previous call to Absorb(), databitLen was a multiple of 8.
   * @pre    The sponge function must be in the absorbing phase,
   *         i.e., Squeeze() must not have been called before.
