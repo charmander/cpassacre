@@ -145,6 +145,7 @@ int main(int argc, char* argv[]) {
 
 	if (output_bytes_required > 1024) {
 		fputs("The maximum password entropy is 8192 bits.\n", stderr);
+		return 1;
 	}
 
 	spongeState state;
