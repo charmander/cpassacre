@@ -129,7 +129,7 @@ int long_divide(unsigned char* bytes, int divisor, size_t byte_count) {
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
 		fputs("Usage: cpassacre <site name>\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	char* sitename = argv[1];
@@ -138,21 +138,21 @@ int main(int argc, char* argv[]) {
 
 	if (scheme.error) {
 		fputs("Failed to get scheme.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	size_t output_bytes_required = bytes_required_for(scheme.last_base);
 
 	if (output_bytes_required > 1024) {
 		fputs("The maximum password entropy is 8192 bits.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	spongeState state;
 
 	if (InitSponge(&state, 64, 1536) != 0) {
 		fputs("Failed to initialize sponge.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	unsigned char input[1024];
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 	if (read_failed) {
 		if (!feof(stdin)) {
 			fputs("Failed to read password.\n", stderr);
-			return 1;
+			return EXIT_FAILURE;
 		}
 
 		input[0] = '\0';
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
 	} else if (input_length > 1022) {
 		/* Avoid silent truncation at 1023 characters */
 		fputs("The maximum password length is 1022 characters.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	input[input_length] = ':';
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 	if (Absorb(&state, input, (input_length + 1) * 8) != 0 ||
 			Absorb(&state, (unsigned char*)sitename, strlen(sitename) * 8) != 0) {
 		fputs("Failed to absorb into sponge.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	memset(input, 0, sizeof input);
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 	for (unsigned int i = 0; i < scheme.iterations; i++) {
 		if (Absorb(&state, input, sizeof input * 8) != 0) {
 			fputs("Failed to absorb into sponge.\n", stderr);
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -200,13 +200,13 @@ int main(int argc, char* argv[]) {
 
 	if (upper_bound == NULL) {
 		fputs("Failed to allocate memory for upper bound.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	do {
 		if (Squeeze(&state, input, output_bytes_required * 8) != 0) {
 			fputs("Failed to squeeze out of sponge.\n", stderr);
-			return 1;
+			return EXIT_FAILURE;
 		}
 	} while (memcmp(input, upper_bound, output_bytes_required) >= 0);
 
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
 
 	if (result == NULL) {
 		fputs("Failed to allocate memory.\n", stderr);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	char* current = result + scheme.length;
@@ -234,5 +234,5 @@ int main(int argc, char* argv[]) {
 	puts(result);
 
 	free(result);
-	return 0;
+	return EXIT_SUCCESS;
 }
