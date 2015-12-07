@@ -7,19 +7,19 @@
 #include "keccak/KeccakSponge.h"
 
 struct password_base {
-	size_t option_count;
-	const char* options;
 	struct password_base* next;
+	const char* options;
+	unsigned int option_count;
 };
 
 struct password_scheme {
-	int error;
-	unsigned int iterations;
 	struct password_base* last_base;
 	size_t length;
+	int error;
+	unsigned int iterations;
 };
 
-int password_scheme_add(struct password_scheme* scheme, size_t count, const char* character_set) {
+static int password_scheme_add(struct password_scheme* scheme, size_t count, const char* character_set) {
 	for (size_t i = 0; i < count; i++) {
 		struct password_base* new_base = malloc(sizeof(struct password_base));
 
@@ -35,7 +35,13 @@ int password_scheme_add(struct password_scheme* scheme, size_t count, const char
 			return 1;
 		}
 
-		new_base->option_count = option_count;
+		if (option_count > 256) {
+			free(new_base);
+			fputs("A character set cannot contain more than 256 characters.\n", stderr);
+			return 1;
+		}
+
+		new_base->option_count = (unsigned int)option_count;
 		new_base->options = character_set;
 		new_base->next = scheme->last_base;
 
@@ -47,19 +53,19 @@ int password_scheme_add(struct password_scheme* scheme, size_t count, const char
 	return 0;
 }
 
-char* password_read(char* s, size_t size) {
+static char* password_read(char* s, size_t size) {
 	struct termios original_termios, modified_termios;
 	int termattr_result = tcgetattr(STDIN_FILENO, &original_termios);
 
 	if (termattr_result == 0) {
 		modified_termios = original_termios;
-		modified_termios.c_lflag &= ~ECHO;
+		modified_termios.c_lflag &= ~(unsigned int)ECHO;
 		termattr_result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified_termios);
 	}
 
 	fputs("Password: ", stderr);
 
-	char* result = fgets(s, size, stdin);
+	char* result = fgets(s, (int)size, stdin);
 
 	if (termattr_result == 0) {
 		putc('\n', stderr);
@@ -71,7 +77,7 @@ char* password_read(char* s, size_t size) {
 
 #include "config.h"
 
-size_t bytes_required_for(const struct password_base* last_base) {
+static size_t bytes_required_for(const struct password_base* last_base) {
 	float bytes = 0.0f;
 
 	while (last_base != NULL) {
@@ -79,10 +85,10 @@ size_t bytes_required_for(const struct password_base* last_base) {
 		last_base = last_base->next;
 	}
 
-	return (size_t)ceil(bytes);
+	return (size_t)(ceil(bytes));
 }
 
-unsigned char* upper_bound_for(const struct password_base* last_base, size_t bytes_required) {
+static unsigned char* upper_bound_for(const struct password_base* last_base, size_t bytes_required) {
 	unsigned char* result = malloc(bytes_required);
 
 	if (result == NULL) {
@@ -95,9 +101,9 @@ unsigned char* upper_bound_for(const struct password_base* last_base, size_t byt
 	while (last_base != NULL) {
 		unsigned int carry = 0;
 
-		for (ssize_t i = bytes_required - 1; i >= 0; i--) {
+		for (size_t i = bytes_required; i-- > 0;) {
 			unsigned int r = result[i] * last_base->option_count + carry;
-			result[i] = r % 256;
+			result[i] = (unsigned char)(r % 256);
 			carry = r / 256;
 		}
 
@@ -112,14 +118,13 @@ unsigned char* upper_bound_for(const struct password_base* last_base, size_t byt
 	return result;
 }
 
-// Divide bytes (stored big-endian) by divisor and return the remainder.
-int long_divide(unsigned char* bytes, int divisor, size_t byte_count) {
-	int carry = 0;
+static unsigned int long_divide(unsigned char* bytes, unsigned int divisor, size_t byte_count) {
+	unsigned int carry = 0;
 
 	for (size_t i = 0; i < byte_count; i++) {
-		int b = 256 * carry + bytes[i];
+		unsigned int b = 256 * carry + bytes[i];
 
-		bytes[i] = b / divisor;
+		bytes[i] = (unsigned char)(b / divisor);
 		carry = b % divisor;
 	}
 
@@ -223,7 +228,7 @@ int main(int argc, char* argv[]) {
 	*current = '\0';
 
 	while (last_base != NULL) {
-		int c = long_divide(input, last_base->option_count, output_bytes_required);
+		unsigned int c = long_divide(input, last_base->option_count, output_bytes_required);
 		*--current = last_base->options[c];
 
 		struct password_base* const next = last_base->next;

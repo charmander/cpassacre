@@ -8,7 +8,7 @@
 
 #define SCHEME_ADD(count, character_set) if (password_scheme_add(&scheme, count, character_set) != 0) { scheme.error = 1; return scheme; }
 
-struct password_scheme scheme_for(const char* sitename) {
+static struct password_scheme scheme_for(const char* const sitename) {
 	struct password_scheme scheme;
 	memset(&scheme, 0, sizeof scheme);
 	(void)sitename;
