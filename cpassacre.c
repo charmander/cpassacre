@@ -85,7 +85,7 @@ static size_t bytes_required_for(const struct password_base* last_base) {
 		last_base = last_base->next;
 	}
 
-	return (size_t)(ceil(bytes));
+	return (size_t)(ceilf(bytes));
 }
 
 static unsigned char* upper_bound_for(const struct password_base* last_base, size_t bytes_required) {
