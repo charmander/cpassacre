@@ -19,15 +19,15 @@ struct password_scheme {
 	unsigned int iterations;
 };
 
-static int password_scheme_add(struct password_scheme* scheme, size_t count, const char* character_set) {
+static int password_scheme_add(struct password_scheme* const scheme, size_t const count, char const* const character_set) {
 	for (size_t i = 0; i < count; i++) {
-		struct password_base* new_base = malloc(sizeof(struct password_base));
+		struct password_base* const new_base = malloc(sizeof(struct password_base));
 
 		if (new_base == NULL) {
 			return 1;
 		}
 
-		size_t option_count = strlen(character_set);
+		size_t const option_count = strlen(character_set);
 
 		if (option_count == 0) {
 			free(new_base);
@@ -53,19 +53,19 @@ static int password_scheme_add(struct password_scheme* scheme, size_t count, con
 	return 0;
 }
 
-static char* password_read(char* s, size_t size) {
-	struct termios original_termios, modified_termios;
+static char* password_read(char* const s, size_t const size) {
+	struct termios original_termios;
 	int termattr_result = tcgetattr(STDIN_FILENO, &original_termios);
 
 	if (termattr_result == 0) {
-		modified_termios = original_termios;
+		struct termios modified_termios = original_termios;
 		modified_termios.c_lflag &= ~(unsigned int)ECHO;
 		termattr_result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &modified_termios);
 	}
 
 	fputs("Password: ", stderr);
 
-	char* result = fgets(s, (int)size, stdin);
+	char* const result = fgets(s, (int)size, stdin);
 
 	if (termattr_result == 0) {
 		putc('\n', stderr);
@@ -77,7 +77,7 @@ static char* password_read(char* s, size_t size) {
 
 #include "config.h"
 
-static size_t bytes_required_for(const struct password_base* last_base) {
+static size_t bytes_required_for(struct password_base const* last_base) {
 	float bytes = 0.0f;
 
 	while (last_base != NULL) {
@@ -88,8 +88,8 @@ static size_t bytes_required_for(const struct password_base* last_base) {
 	return (size_t)(ceilf(bytes));
 }
 
-static unsigned char* upper_bound_for(const struct password_base* last_base, size_t bytes_required) {
-	unsigned char* result = malloc(bytes_required);
+static unsigned char* upper_bound_for(struct password_base const* last_base, size_t const bytes_required) {
+	unsigned char* const result = malloc(bytes_required);
 
 	if (result == NULL) {
 		return NULL;
@@ -102,7 +102,7 @@ static unsigned char* upper_bound_for(const struct password_base* last_base, siz
 		unsigned int carry = 0;
 
 		for (size_t i = bytes_required; i-- > 0;) {
-			unsigned int r = result[i] * last_base->option_count + carry;
+			unsigned int const r = result[i] * last_base->option_count + carry;
 			result[i] = (unsigned char)(r % 256);
 			carry = r / 256;
 		}
@@ -118,11 +118,11 @@ static unsigned char* upper_bound_for(const struct password_base* last_base, siz
 	return result;
 }
 
-static unsigned int long_divide(unsigned char* bytes, unsigned int divisor, size_t byte_count) {
+static unsigned int long_divide(unsigned char* const bytes, unsigned int const divisor, size_t const byte_count) {
 	unsigned int carry = 0;
 
 	for (size_t i = 0; i < byte_count; i++) {
-		unsigned int b = 256 * carry + bytes[i];
+		unsigned int const b = 256 * carry + bytes[i];
 
 		bytes[i] = (unsigned char)(b / divisor);
 		carry = b % divisor;
@@ -131,22 +131,22 @@ static unsigned int long_divide(unsigned char* bytes, unsigned int divisor, size
 	return carry;
 }
 
-int main(int argc, char* argv[]) {
+int main(int const argc, char const* const argv[]) {
 	if (argc != 2) {
 		fputs("Usage: cpassacre <site name>\n", stderr);
 		return EXIT_FAILURE;
 	}
 
-	char* sitename = argv[1];
+	char const* const sitename = argv[1];
 
-	struct password_scheme scheme = scheme_for(sitename);
+	struct password_scheme const scheme = scheme_for(sitename);
 
 	if (scheme.error) {
 		fputs("Failed to get scheme.\n", stderr);
 		return EXIT_FAILURE;
 	}
 
-	size_t output_bytes_required = bytes_required_for(scheme.last_base);
+	size_t const output_bytes_required = bytes_required_for(scheme.last_base);
 
 	if (output_bytes_required > 1024) {
 		fputs("The maximum password entropy is 8192 bits.\n", stderr);
@@ -162,9 +162,7 @@ int main(int argc, char* argv[]) {
 
 	unsigned char input[1024];
 
-	int read_failed = (password_read((char*)input, sizeof input) == NULL);
-
-	if (read_failed) {
+	if (password_read((char*)input, sizeof input) == NULL) {
 		if (!feof(stdin)) {
 			fputs("Failed to read password.\n", stderr);
 			return EXIT_FAILURE;
@@ -186,7 +184,7 @@ int main(int argc, char* argv[]) {
 	input[input_length] = ':';
 
 	if (Absorb(&state, input, (input_length + 1) * 8) != 0 ||
-			Absorb(&state, (unsigned char*)sitename, strlen(sitename) * 8) != 0) {
+			Absorb(&state, (unsigned char const*)sitename, strlen(sitename) * 8) != 0) {
 		fputs("Failed to absorb into sponge.\n", stderr);
 		return EXIT_FAILURE;
 	}
@@ -201,21 +199,24 @@ int main(int argc, char* argv[]) {
 	}
 
 	struct password_base* last_base = scheme.last_base;
-	unsigned char* upper_bound = upper_bound_for(last_base, output_bytes_required);
 
-	if (upper_bound == NULL) {
-		fputs("Failed to allocate memory for upper bound.\n", stderr);
-		return EXIT_FAILURE;
-	}
+	{
+		unsigned char* const upper_bound = upper_bound_for(last_base, output_bytes_required);
 
-	do {
-		if (Squeeze(&state, input, output_bytes_required * 8) != 0) {
-			fputs("Failed to squeeze out of sponge.\n", stderr);
+		if (upper_bound == NULL) {
+			fputs("Failed to allocate memory for upper bound.\n", stderr);
 			return EXIT_FAILURE;
 		}
-	} while (memcmp(input, upper_bound, output_bytes_required) >= 0);
 
-	free(upper_bound);
+		do {
+			if (Squeeze(&state, input, output_bytes_required * 8) != 0) {
+				fputs("Failed to squeeze out of sponge.\n", stderr);
+				return EXIT_FAILURE;
+			}
+		} while (memcmp(input, upper_bound, output_bytes_required) >= 0);
+
+		free(upper_bound);
+	}
 
 	char* const result = malloc(scheme.length + 1);
 
@@ -228,7 +229,7 @@ int main(int argc, char* argv[]) {
 	*current = '\0';
 
 	while (last_base != NULL) {
-		unsigned int c = long_divide(input, last_base->option_count, output_bytes_required);
+		unsigned int const c = long_divide(input, last_base->option_count, output_bytes_required);
 		*--current = last_base->options[c];
 
 		struct password_base* const next = last_base->next;
