@@ -19,6 +19,7 @@ struct password_scheme {
 	unsigned int iterations;
 };
 
+__attribute__ ((warn_unused_result))
 static int password_scheme_add(struct password_scheme* const scheme, size_t const count, char const* const character_set) {
 	for (size_t i = 0; i < count; i++) {
 		struct password_base* const new_base = malloc(sizeof(struct password_base));
@@ -53,6 +54,7 @@ static int password_scheme_add(struct password_scheme* const scheme, size_t cons
 	return 0;
 }
 
+__attribute__ ((warn_unused_result))
 static char* password_read(char* const s, size_t const size) {
 	struct termios original_termios;
 	int termattr_result = tcgetattr(STDIN_FILENO, &original_termios);
@@ -77,6 +79,7 @@ static char* password_read(char* const s, size_t const size) {
 
 #include "config.h"
 
+__attribute__ ((warn_unused_result))
 static size_t bytes_required_for(struct password_base const* last_base) {
 	float bytes = 0.0f;
 
@@ -88,6 +91,7 @@ static size_t bytes_required_for(struct password_base const* last_base) {
 	return (size_t)(ceilf(bytes));
 }
 
+__attribute__ ((warn_unused_result))
 static unsigned char* upper_bound_for(struct password_base const* last_base, size_t const bytes_required) {
 	unsigned char* const result = malloc(bytes_required);
 
@@ -118,6 +122,7 @@ static unsigned char* upper_bound_for(struct password_base const* last_base, siz
 	return result;
 }
 
+__attribute__ ((warn_unused_result))
 static unsigned int long_divide(unsigned char* const bytes, unsigned int const divisor, size_t const byte_count) {
 	unsigned int carry = 0;
 
