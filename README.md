@@ -1,6 +1,6 @@
 # cpassacre
 
-A somewhat [passacre][]-compatible password generator with a fast startup.
+A somewhat [passacre][]-compatible password generator with a fast startup. **Deprecated in favour of [nosepass][]**; please report bugs by e-mail.
 
 Configuration is done through `config.h`. Modify it and recompile.
 
@@ -25,4 +25,5 @@ Configuration is done through `config.h`. Modify it and recompile.
 
 
 [passacre]: https://github.com/habnabit/passacre
+[nosepass]: https://github.com/charmander/nosepass
 [1]: https://passacre.readthedocs.org/en/latest/schema.html#examples
